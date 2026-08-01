@@ -1,0 +1,17 @@
+{
+  "admin": {
+    "password_hash": "240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9",
+    "full_name": "Project Administrator",
+    "created": "2026-01-01"
+  },
+  "bob": {
+    "password_hash": "fcf730b6d95236ecd3c9fc2d92d7b6b2bb061514961aec041d6c7a7192f592e4",
+    "full_name": "Bob Smith",
+    "created": "2026-07-31T20:00:11.569809"
+  },
+  "shamsudeenali": {
+    "password_hash": "66ed940ff8026654485e8f7a6a1c3f041514ec76b49c3ce8f820a98a463947a4",
+    "full_name": "Dawda Ali Shamsudeen",
+    "created": "2026-07-31T21:16:20.107723"
+  }
+}

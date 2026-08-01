@@ -140,7 +140,7 @@ class BinghamPlasticRheology:
         # Conversion factors
         conversion_factors = {
             "C_to_K": mud_report.temperature_c + 273.15,
-            "PPG_to_kgm3": mud_report.density_kg_m3 * 0.00879530,  # Check if this is correct
+            "PPG_to_kgm3": mud_report.mud_weight_ppg * 119.826,
             "cP_to_Pa_s": mud_report.plastic_viscosity_cP / 1000.0,
             "lbf_100ft2_to_Pa": mud_report.yield_point_lbf_100ft2 * 47.8803,
         }

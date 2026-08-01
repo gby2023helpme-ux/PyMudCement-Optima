@@ -56,6 +56,63 @@ class AnnularGeometry:
         return self.hole_diameter_in * 0.0254
 
 
+class RheologyModel(Enum):
+    """Supported rheological (non-Newtonian) fluid models."""
+
+    NEWTONIAN = "Newtonian"
+    BINGHAM = "Bingham-Plastic"
+    POWER_LAW = "Power Law"
+    HERSCHEL_BULKLEY = "Herschel-Bulkley"
+
+
+@dataclass
+class RheologyProfile:
+    """Rheological properties of the circulating fluid.
+
+    Only the fields relevant to the chosen ``model`` are used:
+    Newtonian -> ``dynamic_viscosity_pa_s``; Bingham -> plastic viscosity +
+    yield point; Power Law -> consistency index + flow behaviour index;
+    Herschel-Bulkley -> yield point + consistency index + behaviour index.
+    """
+
+    model: RheologyModel = RheologyModel.BINGHAM
+    plastic_viscosity_pa_s: float = 0.0
+    yield_point_pa: float = 0.0
+    consistency_index_pa_sn: float = 0.0
+    flow_behavior_index: float = 1.0
+    dynamic_viscosity_pa_s: float = 0.0
+
+
+@dataclass
+class CirculatingGeometry:
+    """Pipe/annular geometry of a complete circulating system.
+
+    Diameters and lengths are SI (m). ``drill_pipe_annulus`` uses the
+    open-hole diameter as its outer boundary; the drill-collar annulus
+    spans the drill-collar length only.
+    """
+
+    surface_line_length_m: float
+    surface_line_id_m: float
+    drill_pipe_length_m: float
+    drill_pipe_id_m: float
+    drill_pipe_od_m: float
+    drill_collar_length_m: float
+    drill_collar_id_m: float
+    drill_collar_od_m: float
+    bit_nozzle_area_m2: float
+    open_hole_diameter_m: float
+    tvd_m: float
+
+    @property
+    def drill_pipe_annulus_length_m(self) -> float:
+        return self.drill_pipe_length_m
+
+    @property
+    def drill_collar_annulus_length_m(self) -> float:
+        return self.drill_collar_length_m
+
+
 @dataclass
 class SlurryDesign:
     base_cement: Optional[str] = None

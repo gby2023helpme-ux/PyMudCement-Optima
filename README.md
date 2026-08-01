@@ -16,7 +16,7 @@ pip install -r requirements.txt
 python -m pytest tests/ -v
 
 # Run Streamlit GUI
-streamlit run src/gui/drilling_interface.py
+streamlit run src/gui/app.py
 
 # Run CLI
 python main/cli.py pressure-balance --depth 2000 --pore-pressure 21000000 --fracture-gradient 15000
@@ -58,6 +58,7 @@ python main/cli.py pressure-balance --depth 2000 --pore-pressure 21000000 --frac
 ```
 PyMudCement-Optima/
 ├── src/
+│   ├── __init__.py
 │   ├── core/
 │   │   ├── __init__.py
 │   │   ├── models.py                  # Data classes and enums
@@ -65,7 +66,21 @@ PyMudCement-Optima/
 │   │   └── cementing_engine.py        # Cementing math engines
 │   └── gui/
 │       ├── __init__.py
-│       └── drilling_interface.py       # Streamlit GUI (6 tabs)
+│       ├── app.py                     # Streamlit entry point (run this)
+│       ├── theme.py                   # Design system: colors, fonts, CSS
+│       ├── icons.py                   # Google Material Symbols helpers
+│       ├── components.py              # Shared UI components (hero, cards, sidebar, login)
+│       ├── auth.py                    # User login/registration (users.json)
+│       └── modules/                   # One page per module
+│           ├── __init__.py            # Page router
+│           ├── registry.py            # Module metadata (icons, titles, descriptions)
+│           ├── home.py
+│           ├── pressure_balance.py
+│           ├── mud_report_parser.py
+│           ├── annular_hydraulics.py
+│           ├── slurry_design.py
+│           ├── procedure_sheet.py
+│           └── plug_design.py
 ├── tests/
 │   ├── test_engineering_calculators.py # 11 tests
 │   └── test_cementing_engine.py        # 22 tests
