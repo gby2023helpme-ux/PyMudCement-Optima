@@ -210,9 +210,13 @@ section[data-testid="stSidebar"] [data-testid="stCaptionContainer"] p {
 .user-chip .u-role { color: #9db8e8; font-size: 0.68rem; }
 
 /* ── Sidebar navigation buttons ─────────────────────────── */
-section[data-testid="stSidebar"] .stButton > button {
+section[data-testid="stSidebar"] .stButton,
+section[data-testid="stSidebar"] .stButton > div {
     width: 100%;
-    justify-content: flex-start;
+}
+section[data-testid="stSidebar"] .stButton button {
+    width: 100%;
+    justify-content: flex-start !important;
     text-align: left;
     background: transparent !important;
     border: none !important;
@@ -224,27 +228,20 @@ section[data-testid="stSidebar"] .stButton > button {
     font-weight: 500 !important;
     transition: background 0.15s ease;
 }
-section[data-testid="stSidebar"] .stButton > button:hover {
+section[data-testid="stSidebar"] .stButton button:hover {
     background: rgba(255,255,255,0.10) !important;
 }
-section[data-testid="stSidebar"] .stButton > button p { margin: 0; width: 100%; }
-section[data-testid="stSidebar"] .stButton > button > div[data-testid="stButtonLabel"],
-section[data-testid="stSidebar"] .stButton > button > [data-testid="stButtonLabel"] {
-    justify-content: flex-start !important;
-    width: 100%;
-}
-section[data-testid="stSidebar"] .stButton > button p,
-section[data-testid="stSidebar"] .stButton > button span { text-align: left; }
-section[data-testid="stSidebar"] .stButton > button .stIconMaterial { color: #9db8e8; }
+section[data-testid="stSidebar"] .stButton button p { margin: 0; width: 100%; text-align: left; }
+section[data-testid="stSidebar"] .stButton button .stIconMaterial { color: #9db8e8; }
 .sidebar-footer { margin-top: 1.4rem; padding-top: 0.8rem; border-top: 1px solid rgba(255,255,255,0.15); }
-.sidebar-footer .stButton > button {
+.sidebar-footer .stButton button {
     background: rgba(255,255,255,0.08) !important;
     border: 1px solid rgba(255,255,255,0.2) !important;
     border-radius: 9px !important;
-    justify-content: center; text-align: center;
+    justify-content: center !important; text-align: center;
     color: #ffffff !important; font-weight: 600 !important;
 }
-.sidebar-footer .stButton > button .stIconMaterial { color: #ffffff !important; }
+.sidebar-footer .stButton button .stIconMaterial { color: #ffffff !important; }
 
 /* ── Unit system selector ───────────────────────────────── */
 .sidebar-mini-label {
