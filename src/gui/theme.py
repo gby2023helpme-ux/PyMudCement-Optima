@@ -125,6 +125,9 @@ html, body, [class*="css"] {
     filter: drop-shadow(0 4px 8px rgba(0,0,0,0.25));
     position: relative; z-index: 1;
 }
+.hero-icon .material-symbols-rounded {
+    color: #ffffff !important;
+}
 .hero-title { color: #ffffff !important; font-size: 1.7rem; font-weight: 800; margin: 0; letter-spacing: -0.02em; position: relative; z-index: 1; }
 .hero-sub { color: #c7dbf5 !important; margin: 0.2rem 0 0; font-size: 0.95rem; font-weight: 400; position: relative; z-index: 1; }
 
@@ -311,6 +314,14 @@ button[kind="primary"]:hover,
     transform: translateY(-1px);
     box-shadow: 0 6px 16px rgba(29,78,216,0.35);
 }
+button[kind="primary"] p,
+button[kind="primary"] span,
+button[kind="primary"] [data-testid="stButtonLabel"],
+.stButton > button[kind="primary"] p,
+.stButton > button[kind="primary"] span,
+.stButton > button[kind="primary"] [data-testid="stButtonLabel"] {
+    color: #ffffff !important;
+}
 .stButton > button:not([kind="primary"]) {
     background: #ffffff !important;
     color: #1d4ed8 !important;
@@ -407,6 +418,12 @@ details[open] { border-color: #1d4ed8 !important; box-shadow: 0 3px 12px rgba(15
 .stRadio [data-baseweb="radio"] input:checked ~ div {
     background-color: #1d4ed8 !important; border-color: #1d4ed8 !important;
 }
+.stRadio label:has(input:checked) p,
+.stRadio label:has(input:checked) span,
+.stRadio [data-baseweb="radio"] input:checked ~ p,
+.stRadio [data-baseweb="radio"] input:checked ~ span {
+    color: #ffffff !important;
+}
 
 /* ── File uploader ──────────────────────────────────────── */
 .stFileUploader [data-testid="stFileUploadDropzone"] {
@@ -433,16 +450,31 @@ details[open] { border-color: #1d4ed8 !important; box-shadow: 0 3px 12px rgba(15
 .stPlotlyChart { background: #ffffff; border-radius: 12px; padding: 4px; border: 1px solid #e2e8f0; }
 
 /* ── Login card ─────────────────────────────────────────── */
-.login-shell { max-width: 460px; margin: 2.5rem auto 0; }
+.login-shell { max-width: 460px; margin: 0 auto; }
+[data-testid="stMainBlockContainer"]:has(.login-shell) {
+    max-width: 480px !important;
+    margin: 0 auto !important;
+    min-height: 100vh !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+    padding-top: 3rem !important;
+    padding-bottom: 1.5rem !important;
+}
 .login-card {
     background: #ffffff; border-radius: 18px; padding: 2rem 2.2rem;
     border: 1px solid #e2e8f0; box-shadow: 0 16px 44px rgba(15,42,67,0.14);
 }
 .login-logo {
+    color:#ffffff;
     width: 62px; height: 62px; margin: 0 auto 0.9rem; border-radius: 16px;
     background: linear-gradient(135deg, #0f2a43, #1d4ed8);
     display: flex; align-items: center; justify-content: center;
     box-shadow: 0 8px 20px rgba(29,78,216,0.35);
+}
+.login-logo .material-symbols-rounded,
+.sidebar-brand .logo .material-symbols-rounded {
+    color: #ffffff !important;
 }
 .login-title { text-align: center; color: #0f2a43; font-weight: 800; font-size: 1.35rem; margin-bottom: 0.2rem; }
 .login-sub { text-align: center; color: #64748b !important; font-size: 0.82rem; margin-bottom: 1.2rem; }
