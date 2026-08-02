@@ -5,9 +5,11 @@ full stylesheet (Inter font + Google Material Symbols webfont) so every
 page renders with an identical look and feel.
 """
 
-import streamlit as st
+from pathlib import Path
+
 import plotly.graph_objects as go
 import plotly.io as pio
+import streamlit as st
 
 # ── Brand palette ──────────────────────────────────────────────────────
 NAVY = "#0f2a43"
@@ -18,11 +20,13 @@ BG = "#f4f6fb"
 
 PAGE_TITLE = "PyMudCement-Optima"
 
+FAVICON_PATH = Path(__file__).resolve().parents[2] / "assets" / "favicon.svg"
+
 # ── Page config ────────────────────────────────────────────────────────
 def setup_page_config() -> None:
     st.set_page_config(
         page_title=PAGE_TITLE,
-        page_icon="🛢️",
+        page_icon=str(FAVICON_PATH),
         layout="wide",
         initial_sidebar_state="expanded",
     )
