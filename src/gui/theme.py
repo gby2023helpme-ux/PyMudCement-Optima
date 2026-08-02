@@ -228,6 +228,13 @@ section[data-testid="stSidebar"] .stButton > button:hover {
     background: rgba(255,255,255,0.10) !important;
 }
 section[data-testid="stSidebar"] .stButton > button p { margin: 0; width: 100%; }
+section[data-testid="stSidebar"] .stButton > button > div[data-testid="stButtonLabel"],
+section[data-testid="stSidebar"] .stButton > button > [data-testid="stButtonLabel"] {
+    justify-content: flex-start !important;
+    width: 100%;
+}
+section[data-testid="stSidebar"] .stButton > button p,
+section[data-testid="stSidebar"] .stButton > button span { text-align: left; }
 section[data-testid="stSidebar"] .stButton > button .stIconMaterial { color: #9db8e8; }
 .sidebar-footer { margin-top: 1.4rem; padding-top: 0.8rem; border-top: 1px solid rgba(255,255,255,0.15); }
 .sidebar-footer .stButton > button {
