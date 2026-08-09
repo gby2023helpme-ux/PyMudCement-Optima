@@ -5,9 +5,15 @@ import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
 
+from src.core.constants import CP_PER_PA_S, PA_PER_LBF_100FT2
 from src.core.engineering_calculators import BinghamPlasticRheology
 from src.core.models import MudReport
 from src.gui.components import hero, section_label
+
+
+# API-standard six-speed Fann viscometer dial points (3, 6, 100, 200, 300, 600 rpm),
+# converted to shear rate in s⁻¹.
+FANN_VISCOMETER_SHEAR_RATES_S1 = (5.1, 10.2, 170.0, 341.0, 511.0, 1022.0)
 
 
 def render() -> None:
@@ -63,11 +69,11 @@ def render() -> None:
 
             st.subheader("Bingham-Plastic Rheology Curve")
             st.caption("Shear stress computed using the Bingham-Plastic model:  τ = YP + μ_PV × γ̇")
-            shear_rates = [5.1, 10.2, 170, 341, 511, 1022]
+            shear_rates = FANN_VISCOMETER_SHEAR_RATES_S1
             fig = go.Figure()
             for r in reports:
-                pv_pa = r.plastic_viscosity_cP / 1000.0
-                yp_pa = r.yield_point_lbf_100ft2 * 47.8803
+                pv_pa = r.plastic_viscosity_cP / CP_PER_PA_S
+                yp_pa = r.yield_point_lbf_100ft2 * PA_PER_LBF_100FT2
                 ss = [BinghamPlasticRheology.calculate_shear_stress(yp_pa, pv_pa, sr) for sr in shear_rates]
                 fig.add_trace(go.Scatter(
                     x=shear_rates, y=ss, mode="lines+markers",

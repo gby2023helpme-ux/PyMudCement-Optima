@@ -10,6 +10,8 @@ from typing import List, Dict, Optional, Union
 from enum import Enum, auto
 import math
 
+from .constants import BASE_SLURRY_DENSITY_KC_M3, CEMENT_BASE_DENSITIES, M_PER_FT, M_PER_IN
+
 
 class FluidType(Enum):
     WATER = "Water"
@@ -49,11 +51,11 @@ class AnnularGeometry:
 
     @property
     def casing_diameter_m(self) -> float:
-        return self.casing_diameter_in * 0.0254
+        return self.casing_diameter_in * M_PER_IN
 
     @property
     def hole_diameter_m(self) -> float:
-        return self.hole_diameter_in * 0.0254
+        return self.hole_diameter_in * M_PER_IN
 
 
 class RheologyModel(Enum):
@@ -156,15 +158,15 @@ class CasingSpec:
 
     @property
     def inner_diameter_m(self) -> float:
-        return self.inner_diameter_in * 0.0254
+        return self.inner_diameter_in * M_PER_IN
 
     @property
     def outer_diameter_m(self) -> float:
-        return self.outer_diameter_in * 0.0254
+        return self.outer_diameter_in * M_PER_IN
 
     @property
     def length_m(self) -> float:
-        return self.length_ft * 0.3048
+        return self.length_ft * M_PER_FT
 
 
 @dataclass
@@ -198,15 +200,9 @@ class CementSlurry:
 
     @property
     def estimated_density_kg_m3(self) -> float:
-        base_densities = {
-            CementType.WATER_BASED: 1440.0,
-            CementType.OIL_BASED: 1380.0,
-            CementType.FOAM: 1250.0,
-            CementType.GEL: 1500.0,
-            CementType.LIGHTEN: 1300.0,
-            CementType.HEAVY_DENSITY: 1800.0,
-        }
-        base_density = base_densities.get(self.base_cement, 1440.0)
+        base_density = CEMENT_BASE_DENSITIES.get(
+            self.base_cement.name, BASE_SLURRY_DENSITY_KC_M3
+        )
         additive_density = sum(add.weight_per_m3 for add in self.additives)
         return base_density + additive_density
 
@@ -222,7 +218,7 @@ class PlugDesign:
 
     @property
     def annular_area_m2(self) -> float:
-        return math.pi * self.diameter_m ** 2
+        return math.pi * self.diameter_m ** 2 / 4.0
 
     @property
     def displacement_ratio(self) -> float:

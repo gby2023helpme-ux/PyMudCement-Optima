@@ -4,6 +4,7 @@ import pandas as pd
 import plotly.express as px
 import streamlit as st
 
+from src.core.constants import L_PER_M3, M_PER_IN, W_PER_KW
 from src.core.hydraulics_engine import SystemHydraulics
 from src.core.models import CirculatingGeometry, RheologyModel, RheologyProfile
 from src.gui.components import hero, section_label
@@ -115,18 +116,18 @@ def render() -> None:
     if st.button("Calculate System Hydraulics", key="csh", type="primary"):
         geom = CirculatingGeometry(
             surface_line_length_m=u.len_to_si(surf_len),
-            surface_line_id_m=surf_id * 0.0254,
+            surface_line_id_m=surf_id * M_PER_IN,
             drill_pipe_length_m=u.len_to_si(dp_len),
-            drill_pipe_id_m=dp_id * 0.0254,
-            drill_pipe_od_m=dp_od * 0.0254,
+            drill_pipe_id_m=dp_id * M_PER_IN,
+            drill_pipe_od_m=dp_od * M_PER_IN,
             drill_collar_length_m=u.len_to_si(dc_len),
-            drill_collar_id_m=dc_id * 0.0254,
-            drill_collar_od_m=dc_od * 0.0254,
+            drill_collar_id_m=dc_id * M_PER_IN,
+            drill_collar_od_m=dc_od * M_PER_IN,
             bit_nozzle_area_m2=u.area_to_si(tfa),
-            open_hole_diameter_m=hole * 0.0254,
+            open_hole_diameter_m=hole * M_PER_IN,
             tvd_m=u.len_to_si(tvd),
         )
-        flow_m3_s = u.flow_to_si(flow_in) / 1000.0
+        flow_m3_s = u.flow_to_si(flow_in) / L_PER_M3
         density = u.density_to_si(dens_in)
 
         with st.spinner("Solving system pressure profile…"):
@@ -143,7 +144,7 @@ def render() -> None:
 
         c1, c2, c3 = st.columns(3)
         c1.metric("Jet Velocity", f"{u.velocity_from_si(result['jet_velocity_m_s']):.1f} {u.velocity}")
-        c2.metric("Bit Hydraulic Power", f"{u.power_from_si(result['bit_hydraulic_power_w'] / 1000.0):.1f} {u.power}")
+        c2.metric("Bit Hydraulic Power", f"{u.power_from_si(result['bit_hydraulic_power_w'] / W_PER_KW):.1f} {u.power}")
         c3.metric("Hydraulic Impact Force", f"{u.force_from_si(result['hydraulic_impact_force_n']):.0f} {u.force}")
 
         st.subheader("Section Pressure-Drop Breakdown")

@@ -10,10 +10,15 @@ from enum import Enum
 
 import streamlit as st
 
-M_PER_FT = 0.3048
-PA_PER_PSI = 6894.757293168
+from src.core.constants import (
+    CP_PER_PA_S,
+    KG_M3_PER_PPG,
+    M_PER_FT,
+    PA_PER_LBF_100FT2,
+    PA_PER_PSI,
+)
+
 PA_M_PER_PSI_FT = PA_PER_PSI / M_PER_FT
-KG_M3_PER_PPG = 119.8264273207
 M3_PER_BBL = 0.158987294928
 LPM_PER_BBL_MIN = 158.987294928
 LPS_PER_GPM = 0.0630901964
@@ -21,7 +26,6 @@ M_S_PER_FT_MIN = 0.00508
 M2_PER_IN2 = 0.00064516
 MPA_PER_PSI = 0.006894757293
 KG_M3_PER_LB_BBL = 2.853010174
-PA_PER_LBF_100FT2 = 0.47880259
 KW_PER_HP = 0.745699872
 N_PER_LBF = 4.4482216152605
 
@@ -205,10 +209,10 @@ class Units:
 
     # ── viscosity: Pa·s ↔ cP ────────────────────────────────────────
     def viscosity_to_si(self, v: float) -> float:
-        return v / 1000.0 if self.field else v
+        return v / CP_PER_PA_S if self.field else v
 
     def viscosity_from_si(self, v: float) -> float:
-        return v * 1000.0 if self.field else v
+        return v * CP_PER_PA_S if self.field else v
 
     # ── yield point: Pa ↔ lbf/100ft² ────────────────────────────────
     def yield_to_si(self, v: float) -> float:

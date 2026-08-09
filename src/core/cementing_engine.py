@@ -10,7 +10,33 @@ from dataclasses import dataclass, field
 from typing import List, Dict, Optional, Tuple
 from enum import Enum
 
-GRAVITY = 9.81
+from .constants import (
+    BASE_SLURRY_DENSITY_KC_M3,
+    BUMPING_AREA_TERM_PA,
+    COMPRESSIVE_STRENGTH_OFFSET_MPA,
+    COMPRESSIVE_STRENGTH_SLOPE,
+    DENSITY_MATCH_TOLERANCE_KC_M3,
+    DISPLACEMENT_VOLUME_FACTOR,
+    ESTIMATED_PUMP_TIME_FACTOR,
+    FLUSH_DENSITY_KC_M3,
+    GRAVITY,
+    HIGH_TEMPERATURE_WARNING_C,
+    LIGHTWEIGHT_THRESHOLD_DENSITY_KC_M3,
+    L_PER_M3,
+    M_PER_IN,
+    MAX_SAFE_PRESSURE_FACTOR,
+    MIN_COMPRESSIVE_STRENGTH_MPA,
+    MIN_PUMP_TIME_WARNING_MIN,
+    PSI_PER_PA,
+    RETARDER_ONSET_TEMPERATURE_C,
+    RETARDER_TEMP_RAMP_C,
+    SACK_VOLUME_M3,
+    SIDETRACK_BORE_FILL_FRACTION,
+    SPACER_DENSITY_KC_M3,
+    THICKENING_TIME_FACTOR,
+    WATER_DENSITY_KC_M3,
+    WEIGHTING_THRESHOLD_DENSITY_KC_M3,
+)
 
 
 class AdditiveCategory(Enum):
@@ -183,8 +209,8 @@ class CementingEngine:
         length_m: float,
         excess_factor: float = 0.15,
     ) -> float:
-        hole_m = hole_diameter_in * 0.0254
-        casing_m = casing_od_in * 0.0254
+        hole_m = hole_diameter_in * M_PER_IN
+        casing_m = casing_od_in * M_PER_IN
         base_volume = (math.pi / 4) * (hole_m**2 - casing_m**2) * length_m
         return base_volume * (1 + excess_factor)
 
@@ -218,35 +244,39 @@ class CementingEngine:
         additive_plan = []
         total_density_contribution = 0.0
 
-        if request.target_density_kg_m3 > 1500:
+        if request.target_density_kg_m3 > WEIGHTING_THRESHOLD_DENSITY_KC_M3:
             weighting = [a for a in suitable_additives if a.category == AdditiveCategory.WEIGHTING]
             if weighting:
                 w = weighting[0]
                 dosage = min(
-                    (request.target_density_kg_m3 - 1440) / w.specific_gravity,
+                    (request.target_density_kg_m3 - BASE_SLURRY_DENSITY_KC_M3) / w.specific_gravity,
                     w.dosage_range_kg_m3[1],
                 )
                 dosage = max(dosage, w.dosage_range_kg_m3[0])
                 additive_plan.append({
                     "name": w.name,
                     "dosage_kg_m3": round(dosage, 2),
-                    "volume_m3": round(dosage * cement_vol / (w.specific_gravity * 1000), 4),
+                    "volume_m3": round(
+                        dosage * cement_vol / (w.specific_gravity * WATER_DENSITY_KC_M3), 4
+                    ),
                     "category": w.category.value,
                 })
                 total_density_contribution += w.calculate_density_contribution(dosage)
-        elif request.target_density_kg_m3 < 1400:
+        elif request.target_density_kg_m3 < LIGHTWEIGHT_THRESHOLD_DENSITY_KC_M3:
             lightweight = [a for a in suitable_additives if a.category == AdditiveCategory.LIGHTWEIGHT]
             if lightweight:
                 lw = lightweight[0]
                 dosage = min(
-                    (1440 - request.target_density_kg_m3) / lw.specific_gravity,
+                    (BASE_SLURRY_DENSITY_KC_M3 - request.target_density_kg_m3) / lw.specific_gravity,
                     lw.dosage_range_kg_m3[1],
                 )
                 dosage = max(dosage, lw.dosage_range_kg_m3[0])
                 additive_plan.append({
                     "name": lw.name,
                     "dosage_kg_m3": round(dosage, 2),
-                    "volume_m3": round(dosage * cement_vol / (lw.specific_gravity * 1000), 4),
+                    "volume_m3": round(
+                        dosage * cement_vol / (lw.specific_gravity * WATER_DENSITY_KC_M3), 4
+                    ),
                     "category": lw.category.value,
                 })
                 total_density_contribution += lw.calculate_density_contribution(dosage)
@@ -258,7 +288,9 @@ class CementingEngine:
             additive_plan.append({
                 "name": fl.name,
                 "dosage_kg_m3": round(dosage, 2),
-                "volume_m3": round(dosage * cement_vol / (fl.specific_gravity * 1000), 4),
+                "volume_m3": round(
+                    dosage * cement_vol / (fl.specific_gravity * WATER_DENSITY_KC_M3), 4
+                ),
                 "category": fl.category.value,
             })
             total_density_contribution += fl.calculate_density_contribution(dosage)
@@ -268,14 +300,19 @@ class CementingEngine:
         ]
         if retarder_candidates:
             r = retarder_candidates[0]
-            if request.bottomhole_temp_c > 100:
+            if request.bottomhole_temp_c > RETARDER_ONSET_TEMPERATURE_C:
                 dosage_range = r.dosage_range_kg_m3
-                temp_factor = min((request.bottomhole_temp_c - 100) / 100, 1.0)
+                temp_factor = min(
+                    (request.bottomhole_temp_c - RETARDER_ONSET_TEMPERATURE_C) / RETARDER_TEMP_RAMP_C,
+                    1.0,
+                )
                 dosage = dosage_range[0] + temp_factor * (dosage_range[1] - dosage_range[0])
                 additive_plan.append({
                     "name": r.name,
                     "dosage_kg_m3": round(dosage, 2),
-                    "volume_m3": round(dosage * cement_vol / (r.specific_gravity * 1000), 4),
+                    "volume_m3": round(
+                        dosage * cement_vol / (r.specific_gravity * WATER_DENSITY_KC_M3), 4
+                    ),
                     "category": r.category.value,
                 })
                 total_density_contribution += r.calculate_density_contribution(dosage)
@@ -287,27 +324,33 @@ class CementingEngine:
             additive_plan.append({
                 "name": d.name,
                 "dosage_kg_m3": round(dosage, 2),
-                "volume_m3": round(dosage * cement_vol / (d.specific_gravity * 1000), 4),
+                "volume_m3": round(
+                    dosage * cement_vol / (d.specific_gravity * WATER_DENSITY_KC_M3), 4
+                ),
                 "category": d.category.value,
             })
 
-        base_slurry_density = 1440.0
+        base_slurry_density = BASE_SLURRY_DENSITY_KC_M3
         total_density = base_slurry_density + total_density_contribution
 
-        if abs(total_density - request.target_density_kg_m3) > 50:
+        if abs(total_density - request.target_density_kg_m3) > DENSITY_MATCH_TOLERANCE_KC_M3:
             warnings.append(
                 f"Target density {request.target_density_kg_m3} kg/m³ differs from "
                 f"achieved {total_density:.0f} kg/m³. Adjust weighting/lightweight dosage."
             )
 
-        if request.bottomhole_temp_c > 150:
+        if request.bottomhole_temp_c > HIGH_TEMPERATURE_WARNING_C:
             warnings.append("High temperature well. Verify retarder concentration with lab tests.")
 
-        if request.pump_time_min < 30:
+        if request.pump_time_min < MIN_PUMP_TIME_WARNING_MIN:
             warnings.append("Short pump time requested. Ensure adequate retarder for safety margin.")
 
-        thickening_time = request.pump_time_min * 1.5
-        compressive_strength = max(3.5, 20.0 - (request.target_density_kg_m3 - 1440) * 0.01)
+        thickening_time = request.pump_time_min * THICKENING_TIME_FACTOR
+        compressive_strength = max(
+            MIN_COMPRESSIVE_STRENGTH_MPA,
+            COMPRESSIVE_STRENGTH_OFFSET_MPA
+            - (request.target_density_kg_m3 - BASE_SLURRY_DENSITY_KC_M3) * COMPRESSIVE_STRENGTH_SLOPE,
+        )
 
         return SlurryDesignResult(
             slurry_volume_m3=round(slurry_vol, 4),
@@ -315,7 +358,7 @@ class CementingEngine:
             water_volume_m3=round(water_vol, 4),
             additive_plan=additive_plan,
             total_density_kg_m3=round(total_density, 1),
-            estimated_pump_time_min=round(request.pump_time_min * 1.2, 1),
+            estimated_pump_time_min=round(request.pump_time_min * ESTIMATED_PUMP_TIME_FACTOR, 1),
             warnings=warnings,
             thickening_time_min=round(thickening_time, 1),
             compressive_strength_mpa=round(compressive_strength, 2),
@@ -332,12 +375,12 @@ class CementingEngine:
         cumulative = 0.0
 
         if flush_volume_m3 > 0:
-            flush_duration = (flush_volume_m3 * 1000) / pump_rate_lpm
+            flush_duration = (flush_volume_m3 * L_PER_M3) / pump_rate_lpm
             cumulative += flush_volume_m3
             procedure.append(CementingProcedure(
                 stage="1. Flush Fluid",
                 volume_m3=round(flush_volume_m3, 4),
-                density_kg_m3=1000.0,
+                density_kg_m3=FLUSH_DENSITY_KC_M3,
                 pump_rate_lpm=pump_rate_lpm,
                 duration_min=round(flush_duration, 1),
                 cumulative_volume_m3=round(cumulative, 4),
@@ -345,19 +388,19 @@ class CementingEngine:
             ))
 
         if spacer_volume_m3 > 0:
-            spacer_duration = (spacer_volume_m3 * 1000) / pump_rate_lpm
+            spacer_duration = (spacer_volume_m3 * L_PER_M3) / pump_rate_lpm
             cumulative += spacer_volume_m3
             procedure.append(CementingProcedure(
                 stage="2. Spacer",
                 volume_m3=round(spacer_volume_m3, 4),
-                density_kg_m3=1300.0,
+                density_kg_m3=SPACER_DENSITY_KC_M3,
                 pump_rate_lpm=pump_rate_lpm,
                 duration_min=round(spacer_duration, 1),
                 cumulative_volume_m3=round(cumulative, 4),
                 notes="Pump weighted spacer to separate mud and cement",
             ))
 
-        cement_duration = (design.slurry_volume_m3 * 1000) / pump_rate_lpm
+        cement_duration = (design.slurry_volume_m3 * L_PER_M3) / pump_rate_lpm
         cumulative += design.slurry_volume_m3
         procedure.append(CementingProcedure(
             stage=f"{len(procedure) + 1}. Cement Slurry",
@@ -369,13 +412,13 @@ class CementingEngine:
             notes="Pump cement slurry at constant rate. Monitor pump pressure.",
         ))
 
-        displacement_vol = design.slurry_volume_m3 * 1.05
-        disp_duration = (displacement_vol * 1000) / pump_rate_lpm
+        displacement_vol = design.slurry_volume_m3 * DISPLACEMENT_VOLUME_FACTOR
+        disp_duration = (displacement_vol * L_PER_M3) / pump_rate_lpm
         cumulative += displacement_vol
         procedure.append(CementingProcedure(
             stage=f"{len(procedure) + 1}. Displacement",
             volume_m3=round(displacement_vol, 4),
-            density_kg_m3=1000.0,
+            density_kg_m3=FLUSH_DENSITY_KC_M3,
             pump_rate_lpm=pump_rate_lpm,
             duration_min=round(disp_duration, 1),
             cumulative_volume_m3=round(cumulative, 4),
@@ -388,21 +431,21 @@ class CementingEngine:
     def calculate_bumping_pressure(
         displacement_pressure_pa: float,
         casing_id_m: float,
-        fluid_density_kg_m3: float = 1000.0,
+        fluid_density_kg_m3: float = WATER_DENSITY_KC_M3,
         vertical_depth_m: float = 0.0,
     ) -> Dict[str, float]:
         casing_area = math.pi * (casing_id_m ** 2) / 4
         hydrostatic = fluid_density_kg_m3 * GRAVITY * vertical_depth_m if vertical_depth_m > 0 else 0
-        bumping = displacement_pressure_pa + hydrostatic + (casing_area * 100000)
-        max_safe = bumping * 0.85
+        bumping = displacement_pressure_pa + hydrostatic + (casing_area * BUMPING_AREA_TERM_PA)
+        max_safe = bumping * MAX_SAFE_PRESSURE_FACTOR
 
         return {
             "bumping_pressure_pa": round(bumping, 0),
-            "bumping_pressure_psi": round(bumping * 0.000145038, 1),
+            "bumping_pressure_psi": round(bumping * PSI_PER_PA, 1),
             "max_safe_pressure_pa": round(max_safe, 0),
-            "max_safe_pressure_psi": round(max_safe * 0.000145038, 1),
+            "max_safe_pressure_psi": round(max_safe * PSI_PER_PA, 1),
             "casing_area_m2": round(casing_area, 6),
-            "safety_margin_pct": 15.0,
+            "safety_margin_pct": round((1.0 - MAX_SAFE_PRESSURE_FACTOR) * 100.0, 1),
         }
 
 
@@ -417,13 +460,13 @@ class PAPLugDesign:
         cement_density_kg_m3: float = 1900.0,
         displacement_volume_m3: float = 0.0,
     ) -> Dict:
-        hole_m = hole_diameter_in * 0.0254
-        casing_m = casing_od_in * 0.0254
+        hole_m = hole_diameter_in * M_PER_IN
+        casing_m = casing_od_in * M_PER_IN
         annular_area = (math.pi / 4) * (hole_m ** 2 - casing_m ** 2)
         cement_volume = annular_area * plug_length_m
 
         if displacement_volume_m3 == 0:
-            displacement_volume_m3 = cement_volume * 1.05
+            displacement_volume_m3 = cement_volume * DISPLACEMENT_VOLUME_FACTOR
 
         hydrostatic = cement_density_kg_m3 * GRAVITY * plug_length_m
 
@@ -431,12 +474,12 @@ class PAPLugDesign:
             "plug_type": "Suspension Plug",
             "plug_length_m": plug_length_m,
             "cement_volume_m3": round(cement_volume, 4),
-            "cement_volume_sacks": round(cement_volume / 0.0326, 1),
+            "cement_volume_sacks": round(cement_volume / SACK_VOLUME_M3, 1),
             "displacement_volume_m3": round(displacement_volume_m3, 4),
             "cement_density_kg_m3": cement_density_kg_m3,
             "annular_area_m2": round(annular_area, 6),
             "hydrostatic_pressure_pa": round(hydrostatic, 0),
-            "hydrostatic_pressure_psi": round(hydrostatic * 0.000145038, 1),
+            "hydrostatic_pressure_psi": round(hydrostatic * PSI_PER_PA, 1),
         }
 
     @staticmethod
@@ -447,20 +490,20 @@ class PAPLugDesign:
         cement_density_kg_m3: float = 1900.0,
         shoe_depth_m: float = 0.0,
     ) -> Dict:
-        hole_m = hole_diameter_in * 0.0254
-        casing_m = casing_od_in * 0.0254
+        hole_m = hole_diameter_in * M_PER_IN
+        casing_m = casing_od_in * M_PER_IN
         annular_area = (math.pi / 4) * (hole_m ** 2 - casing_m ** 2)
         bore_area = (math.pi / 4) * (hole_m ** 2)
         cement_volume_annular = annular_area * plug_length_m
-        cement_volume_bore = bore_area * plug_length_m * 0.3
+        cement_volume_bore = bore_area * plug_length_m * SIDETRACK_BORE_FILL_FRACTION
         total_cement = cement_volume_annular + cement_volume_bore
-        displacement = total_cement * 1.05
+        displacement = total_cement * DISPLACEMENT_VOLUME_FACTOR
 
         return {
             "plug_type": "Sidetrack Plug",
             "plug_length_m": plug_length_m,
             "cement_volume_m3": round(total_cement, 4),
-            "cement_volume_sacks": round(total_cement / 0.0326, 1),
+            "cement_volume_sacks": round(total_cement / SACK_VOLUME_M3, 1),
             "annular_cement_m3": round(cement_volume_annular, 4),
             "bore_cement_m3": round(cement_volume_bore, 4),
             "displacement_volume_m3": round(displacement, 4),
@@ -477,8 +520,8 @@ class PAPLugDesign:
         bottom_depth_m: float,
         cement_density_kg_m3: float = 1900.0,
     ) -> Dict:
-        hole_m = hole_diameter_in * 0.0254
-        casing_m = casing_od_in * 0.0254
+        hole_m = hole_diameter_in * M_PER_IN
+        casing_m = casing_od_in * M_PER_IN
         annular_area = (math.pi / 4) * (hole_m ** 2 - casing_m ** 2)
         bore_area = (math.pi / 4) * (hole_m ** 2)
 
@@ -486,7 +529,7 @@ class PAPLugDesign:
         bore_cement = bore_area * plug_length_m
         total_cement = annular_cement + bore_cement
 
-        displacement = total_cement * 1.05
+        displacement = total_cement * DISPLACEMENT_VOLUME_FACTOR
 
         hydrostatic_top = cement_density_kg_m3 * GRAVITY * top_depth_m
         hydrostatic_bottom = cement_density_kg_m3 * GRAVITY * bottom_depth_m
@@ -497,11 +540,11 @@ class PAPLugDesign:
             "bottom_depth_m": bottom_depth_m,
             "plug_length_m": plug_length_m,
             "cement_volume_m3": round(total_cement, 4),
-            "cement_volume_sacks": round(total_cement / 0.0326, 1),
+            "cement_volume_sacks": round(total_cement / SACK_VOLUME_M3, 1),
             "annular_cement_m3": round(annular_cement, 4),
             "bore_cement_m3": round(bore_cement, 4),
             "displacement_volume_m3": round(displacement, 4),
             "cement_density_kg_m3": cement_density_kg_m3,
-            "hydrostatic_top_psi": round(hydrostatic_top * 0.000145038, 1),
-            "hydrostatic_bottom_psi": round(hydrostatic_bottom * 0.000145038, 1),
+            "hydrostatic_top_psi": round(hydrostatic_top * PSI_PER_PA, 1),
+            "hydrostatic_bottom_psi": round(hydrostatic_bottom * PSI_PER_PA, 1),
         }   

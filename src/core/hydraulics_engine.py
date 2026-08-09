@@ -31,9 +31,8 @@ Turbulent / transition flow uses the Dodge-Metzner friction factor:
 import math
 from typing import Dict, List, Tuple
 
+from .constants import GRAVITY
 from .models import CirculatingGeometry, RheologyModel, RheologyProfile
-
-GRAVITY = 9.81  # m/s²
 
 LAMINAR_RE = 2100
 TURBULENT_RE = 4000

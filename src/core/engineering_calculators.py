@@ -9,6 +9,14 @@ import math
 from typing import List, Dict, Tuple, Optional
 from dataclasses import dataclass
 
+from .constants import (
+    CP_PER_PA_S,
+    GRAVITY,
+    KG_M3_PER_PPG,
+    MAX_SAFE_PRESSURE_FACTOR,
+    PA_PER_LBF_100FT2,
+    PLUG_BUMP_GEL_FACTOR,
+)
 from .models import (
     Formation,
     MudReport,
@@ -16,7 +24,6 @@ from .models import (
     SlurryDesign,
 )
 
-GRAVITY = 9.81  # m/s²
 
 class HydrostaticPressureCalculator:
     """Calculates hydrostatic pressure balance for drilling operations."""
@@ -44,7 +51,7 @@ class HydrostaticPressureCalculator:
         )
 
         # Convert from kg/m³ to PPG (1 ppg = 119.826 kg/m³, so 1 kg/m³ = 0.0083454 ppg)
-        required_mud_weight_ppg = required_mud_density / 119.826
+        required_mud_weight_ppg = required_mud_density / KG_M3_PER_PPG
 
         return required_mud_density, required_mud_weight_ppg
 
@@ -140,9 +147,9 @@ class BinghamPlasticRheology:
         # Conversion factors
         conversion_factors = {
             "C_to_K": mud_report.temperature_c + 273.15,
-            "PPG_to_kgm3": mud_report.mud_weight_ppg * 119.826,
-            "cP_to_Pa_s": mud_report.plastic_viscosity_cP / 1000.0,
-            "lbf_100ft2_to_Pa": mud_report.yield_point_lbf_100ft2 * 47.8803,
+            "PPG_to_kgm3": mud_report.mud_weight_ppg * KG_M3_PER_PPG,
+            "cP_to_Pa_s": mud_report.plastic_viscosity_cP / CP_PER_PA_S,
+            "lbf_100ft2_to_Pa": mud_report.yield_point_lbf_100ft2 * PA_PER_LBF_100FT2,
         }
 
         return si_mud_report, conversion_factors
@@ -294,17 +301,19 @@ class SlurryDesigner:
         """
         casing_area = math.pi * (casing_diameter_m ** 2) / 4
 
-        # Calculate required bumping pressure
+        # Calculate required bumping pressure (empirical gel build-up model)
         bumping_pressure = displacement_pressure_pa + (
-            casing_area * 9.81 * 0.05 * emergency_stoping_time_min
+            casing_area * GRAVITY * PLUG_BUMP_GEL_FACTOR * emergency_stoping_time_min
         )
 
         # Calculate safe operational window
-        max_safe_pressure = bumping_pressure * 0.85  # 85% of bumping pressure
+        max_safe_pressure = bumping_pressure * MAX_SAFE_PRESSURE_FACTOR
 
         return {
             "bumping_pressure_pa": bumping_pressure,
             "max_safe_pressure_pa": max_safe_pressure,
-            "safety_margin_percentage": 15.0,
+            "safety_margin_percentage": round(
+                (1.0 - MAX_SAFE_PRESSURE_FACTOR) * 100.0, 1
+            ),
             "casing_area_m2": casing_area,
         }

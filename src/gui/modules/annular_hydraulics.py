@@ -5,10 +5,16 @@ import math
 import plotly.express as px
 import streamlit as st
 
+from src.core.constants import L_PER_M3
 from src.core.engineering_calculators import AnnularHydraulics
 from src.core.models import AnnularGeometry
 from src.gui.components import hero, section_label
 from src.gui.units import get_units
+
+
+# ECD sensitivity sweep across a fixed range of annular pressure drops (Pa).
+ECD_SWEEP_MAX_PRESSURE_DROP_PA = 2_000_000
+ECD_SWEEP_PRESSURE_STEP_PA = 100_000
 
 
 def render() -> None:
@@ -48,7 +54,7 @@ def render() -> None:
     )
 
     if st.button("Calculate Annular Hydraulics", key="cah", type="primary"):
-        flow_m3_s = u.flow_to_si(flow_in) / 1000.0
+        flow_m3_s = u.flow_to_si(flow_in) / L_PER_M3
         mud_dens = u.density_to_si(mud_dens_in)
         tvd_si = u.len_to_si(tvd)
         geom = AnnularGeometry(
@@ -68,7 +74,9 @@ def render() -> None:
         c3.metric("Annular Cross-Sectional Area", f"{u.area_from_si(area):.6f} {u.area}")
 
         st.subheader("Equivalent Circulating Density (ECD)")
-        pressure_drops = list(range(0, 2000001, 100000))
+        pressure_drops = list(
+            range(0, ECD_SWEEP_MAX_PRESSURE_DROP_PA + 1, ECD_SWEEP_PRESSURE_STEP_PA)
+        )
         ecd_values = [AnnularHydraulics.calculate_ECD(mud_dens, p, tvd_si) for p in pressure_drops]
 
         fig = px.line(

@@ -4,6 +4,7 @@ import math
 
 import pytest
 
+from src.core.constants import KG_M3_PER_PPG
 from src.core.engineering_calculators import BinghamPlasticRheology
 from src.core.hydraulics_engine import NonNewtonianFluid, SystemHydraulics
 from src.core.models import CirculatingGeometry, MudReport, RheologyModel, RheologyProfile
@@ -205,5 +206,5 @@ def test_pressure_drop_increases_with_length():
 def test_mud_report_ppg_conversion_factor_is_correct():
     mr = MudReport(mud_weight_ppg=10.0, density_kg_m3=1198.26, plastic_viscosity_cP=20.0)
     _, factors = BinghamPlasticRheology.convert_units(mr)
-    assert abs(factors["PPG_to_kgm3"] - 10.0 * 119.826) < 1e-6
+    assert abs(factors["PPG_to_kgm3"] - 10.0 * KG_M3_PER_PPG) < 1e-9
     assert abs(factors["cP_to_Pa_s"] - 0.02) < 1e-12
